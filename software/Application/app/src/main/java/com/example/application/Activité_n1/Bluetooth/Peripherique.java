@@ -1,7 +1,9 @@
 package com.example.application.Activité_n1.Bluetooth;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
+import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -28,8 +30,8 @@ connecter et decconecter sont appeler lors de la connexion au boitier de command
 
 
 public class Peripherique {
-    public static Peripherique peripherique;
 
+    public static Peripherique peripherique;
 
     private String nom;
     private String adresse;
@@ -42,81 +44,69 @@ public class Peripherique {
     public boolean isConnected = false;
 
 
-    public Peripherique(BluetoothDevice device, Handler handler)
-    {
-        if(device != null)
-        {
+    public Peripherique(BluetoothDevice device, Handler handler) {
+
+        if (device != null) {
             this.device = device;
             this.nom = device.getName();
             this.adresse = device.getAddress();
             this.handler = handler;
-        }
-        else
-        {
+        } else {
             this.device = device;
             this.nom = "Aucun";
             this.adresse = "";
             this.handler = handler;
         }
 
-        try
-        {
+        try {
             socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
             receiveStream = socket.getInputStream();
             sendStream = socket.getOutputStream();
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             e.printStackTrace();
             socket = null;
         }
 
-        if(socket != null)
+        if (socket != null)
             tReception = new TReception(handler);
     }
 
-    public String getNom()
-    {
+    public String getNom() {
         return nom;
     }
 
-    public String toString()
-    {
+    public String toString() {
         return "\nNom : " + nom + "\nAdresse : " + adresse;
     }
 
-    public void envoyer(String data)
-    {
-        if(socket == null)
+    public void envoyer(String data) {
+        if (socket == null)
             return;
 
-        try
-        {
+        try {
             sendStream.write(data.getBytes());
             sendStream.flush();
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             System.out.println("<Socket> error send");
             e.printStackTrace();
         }
     }
 
-    public void connecter()
-    {
-        System.out.println("Connecter");
-        new Thread()
-        {
-            @Override public void run()
-            {
+    public void connecter() {
+
+        System.out.println("Trying to connect");
+        new Thread() {
+            @Override
+            public void run() {
                 deconnecter();
                 System.out.println("connexion en cours");
-                try
-                {
+                try {
                     try {
+                        System.out.println("INSIDE FIRST TRY");
                         socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
                         tReception = new TReception(handler);
-                    }catch(Exception e){
+                    } catch (Exception e) {
+                        System.out.println("INSIDE FIRST CATCH");
                         e.printStackTrace();
                         return;
                     }
@@ -125,13 +115,12 @@ public class Peripherique {
                     receiveStream = socket.getInputStream();
                     tReception.start();
 
+                    isConnected = true;
 
-                    isConnected=true;
                     System.out.println("connexion établie");
 
-                }
-                catch (IOException e)
-                {
+                } catch (IOException e) {
+                    System.out.println("INSIDE SECOND CATCH");
                     System.out.println("<Socket> error connect");
                     e.printStackTrace();
                 }
@@ -139,36 +128,43 @@ public class Peripherique {
         }.start();
     }
 
-    public boolean deconnecter()
-    {
+    public boolean deconnecter() {
         System.out.println("déconnexion");
 
-        isConnected=false;
+        isConnected = false;
 
         try {
             tReception.arreter();
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
         }
         if (receiveStream != null) {
-            try {receiveStream.close();} catch (Exception e) {}
+            try {
+                receiveStream.close();
+            } catch (Exception e) {
+            }
             receiveStream = null;
         }
 
         if (sendStream != null) {
-            try {sendStream.close();} catch (Exception e) {}
+            try {
+                sendStream.close();
+            } catch (Exception e) {
+            }
             sendStream = null;
         }
 
         if (socket != null) {
-            try {socket.close();} catch (Exception e) {}
+            try {
+                socket.close();
+            } catch (Exception e) {
+            }
             socket = null;
         }
         System.out.println("déconnexion réussie");
         return true;
 
     }
-
 
 
     private class TReception extends Thread {
@@ -289,19 +285,16 @@ public class Peripherique {
             } else if (tableauDonnees[0].equals("en cours")) {
 
 
-
                 int idCommande = Integer.parseInt(tableauDonnees[1]);
                 int idInstruction = Integer.parseInt(tableauDonnees[2]);
-                if (idCommande==-1){
+                if (idCommande == -1) {
 
-                }
-                else{
-                    if (idInstruction<ListOrder.getById(idCommande).listInstruction.size()){
-                        if (idCommande>=1){
-                            if (ListOrder.getById(idCommande).listInstruction.size()==1){
-                                ListOrder.getById(idCommande).listInstruction.get(idInstruction-1).termine = 1;
-                            }
-                            else if (idInstruction > 1) {
+                } else {
+                    if (idInstruction < ListOrder.getById(idCommande).listInstruction.size()) {
+                        if (idCommande >= 1) {
+                            if (ListOrder.getById(idCommande).listInstruction.size() == 1) {
+                                ListOrder.getById(idCommande).listInstruction.get(idInstruction - 1).termine = 1;
+                            } else if (idInstruction > 1) {
                                 ListOrder.getById(idCommande).listInstruction.get(idInstruction - 2).termine = 2;
                                 ListOrder.getById(idCommande).listInstruction.get(idInstruction - 1).termine = 1;
                             }
@@ -319,12 +312,12 @@ public class Peripherique {
                     }
                 });
 
-            } else if (tableauDonnees[0].equals("connexion")){
+            } else if (tableauDonnees[0].equals("connexion")) {
                 handlerUI = new Handler(Looper.getMainLooper());
                 handlerUI.post(new Runnable() {
                     @Override
                     public void run() {
-                        Toast.makeText(Menu.menu.getContext(),"CONNEXION DES PERIPHERIQUES : SUCCESS",Toast.LENGTH_LONG).show();
+                        Toast.makeText(Menu.menu.getContext(), "CONNEXION DES PERIPHERIQUES : SUCCESS", Toast.LENGTH_LONG).show();
 
                     }
                 });
@@ -332,5 +325,6 @@ public class Peripherique {
             }
 
         }
+
     }
 }

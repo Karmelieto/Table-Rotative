@@ -4,9 +4,9 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Intent;
+import android.os.Bundle;
 import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -14,7 +14,6 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 import android.widget.Toast;
-
 
 import com.example.application.Activité_n1.Bluetooth.Peripherique;
 import com.example.application.Activité_n1.Bluetooth.PeripheriqueAdapter;
@@ -37,9 +36,9 @@ public class Connexion extends AppCompatActivity {
     private Set<BluetoothDevice> devices;
     private BluetoothAdapter adaptateurBluetooth;
     private BroadcastReceiver bluetoothReceiver;
-    private ArrayList<Peripherique> peripheriques;
+    private ArrayList<Peripherique> peripheriques = new ArrayList<>();
+    private ArrayList<String> noms = new ArrayList<>();
     private Peripherique peripherique;
-    private ArrayList<String> noms;
     private Handler handler;
 
     private Button btnConnecter;
@@ -49,58 +48,90 @@ public class Connexion extends AppCompatActivity {
 
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.connexion);
 
         peripheriqueText = findViewById(R.id.textPeripheriqueName);
         btnConnecter = findViewById(R.id.btnConnecter);
 
+        connectBluetooh();
+
         btnConnecter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 System.out.println("click sur connecter");
+                String str = "Trying to connect to " + peripheriqueText.getText() + "...";
+                Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
+
                 peripherique.connecter();
-                while(!peripherique.isConnected);
-                Peripherique.peripherique = peripherique;
-                Intent intent = new Intent(Connexion.this, MainActivity.class);
-                startActivity(intent);
+                if (!peripherique.isConnected) {
+                    Toast.makeText(getApplicationContext(), "Something went wrong, connexion impossible, please try again.", Toast.LENGTH_SHORT).show();
+                } else {
+                    Peripherique.peripherique = peripherique;
+                    Intent intent = new Intent(Connexion.this, MainActivity.class);
+                    startActivity(intent);
+                }
+               // while(!peripherique.isConnected);
             }
         });
 
-        adaptateurBluetooth = BluetoothAdapter.getDefaultAdapter();
-        if (adaptateurBluetooth == null)
-        {
+    }
+
+
+    /*
+    Cette fonction permet d'afficher une notification lorsque le bluetooth du téléphone est activé ou non
+     */
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode != REQUEST_CODE_ENABLE_BLUETOOTH)
+            return;
+        if (resultCode == RESULT_OK) {
+            Toast.makeText(getApplicationContext(), "Bluetooth activé", Toast.LENGTH_SHORT).show();
+        } else {
             Toast.makeText(getApplicationContext(), "Bluetooth non activé !", Toast.LENGTH_SHORT).show();
         }
-        else
-        {
-            if (!adaptateurBluetooth.isEnabled())
-            {
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (adaptateurBluetooth != null) {
+            adaptateurBluetooth.cancelDiscovery();
+        }
+        if (bluetoothReceiver != null) {
+            unregisterReceiver(bluetoothReceiver);
+        }
+    }
+
+    protected void connectBluetooh() {
+
+        adaptateurBluetooth = BluetoothAdapter.getDefaultAdapter();
+        if (adaptateurBluetooth == null) {
+            Toast.makeText(getApplicationContext(), "Bluetooth non activé !", Toast.LENGTH_SHORT).show();
+        } else {
+            if (!adaptateurBluetooth.isEnabled()) {
                 Toast.makeText(getApplicationContext(), "Bluetooth non activé !", Toast.LENGTH_SHORT).show();
                 Intent activeBlueTooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(activeBlueTooth, REQUEST_CODE_ENABLE_BLUETOOTH);
                 //bluetoothAdapter.enable();
-            }
-            else
-            {
+            } else {
                 Toast.makeText(getApplicationContext(), "Bluetooth activé", Toast.LENGTH_SHORT).show();
 
                 // Recherche des périphériques connus
-                peripheriques = new ArrayList<>();
-                noms = new ArrayList<>();
                 devices = adaptateurBluetooth.getBondedDevices();
-                for (BluetoothDevice blueDevice : devices)
-                {
+                for (BluetoothDevice blueDevice : devices) {
                     //Toast.makeText(getApplicationContext(), "Périphérique = " + blueDevice.getName(), Toast.LENGTH_SHORT).show();
                     peripheriques.add(new Peripherique(blueDevice, handler));
                     noms.add(blueDevice.getName());
                 }
 
-                if(peripheriques.size() == 0)
+                if (peripheriques.size() == 0)
                     peripheriques.add(new Peripherique(null, handler));
-                if(noms.size() == 0)
+                if (noms.size() == 0)
                     noms.add("Aucun");
 
 
@@ -109,7 +140,7 @@ public class Connexion extends AppCompatActivity {
                 listePeripheriques = (RecyclerView) findViewById(R.id.bluetoothList);
                 RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
                 listePeripheriques.setLayoutManager(layoutManager);
-                listePeripheriques.setItemAnimator( new DefaultItemAnimator());
+                listePeripheriques.setItemAnimator(new DefaultItemAnimator());
                 final PeripheriqueAdapter peripheriqueAdapter = new PeripheriqueAdapter(this, peripheriques);
                 listePeripheriques.setAdapter(peripheriqueAdapter);
 
@@ -119,6 +150,7 @@ public class Connexion extends AppCompatActivity {
                         peripherique = peripheriques.get(position);
                         peripheriqueText.setText(peripherique.getNom());
                     }
+
                     @Override
                     public void onLongClick(View view, int position) {
                         peripherique = peripheriques.get(position);
@@ -127,38 +159,7 @@ public class Connexion extends AppCompatActivity {
                 }));
             }
         }
-    }
 
-    /*
-    Cette fonction permet d'afficher une notification lorsque le bluetooth du téléphone est activé ou non
-     */
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data)
-    {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode != REQUEST_CODE_ENABLE_BLUETOOTH)
-            return;
-        if (resultCode == RESULT_OK)
-        {
-            Toast.makeText(getApplicationContext(), "Bluetooth activé", Toast.LENGTH_SHORT).show();
-        }
-        else
-        {
-            Toast.makeText(getApplicationContext(), "Bluetooth non activé !", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    @Override
-    protected void onDestroy()
-    {
-        super.onDestroy();
-        if (adaptateurBluetooth != null){
-            adaptateurBluetooth.cancelDiscovery();
-        }
-        if (bluetoothReceiver != null){
-            unregisterReceiver(bluetoothReceiver);
-        }
     }
 }
 
