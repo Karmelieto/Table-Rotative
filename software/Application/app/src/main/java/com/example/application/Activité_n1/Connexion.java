@@ -61,19 +61,22 @@ public class Connexion extends AppCompatActivity {
         btnConnecter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                System.out.println("click sur connecter");
-                String str = "Trying to connect to " + peripheriqueText.getText() + "...";
-                Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
+                if (!peripheriqueText.getText().toString().equals("Appareil à connecter")) {
+                    System.out.println("click sur connecter");
+                    String str = "Trying to connect to " + peripheriqueText.getText() + "...";
+                    Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
 
-                peripherique.connecter();
-                if (!peripherique.isConnected) {
-                    Toast.makeText(getApplicationContext(), "Something went wrong, connexion impossible, please try again.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Peripherique.peripherique = peripherique;
-                    Intent intent = new Intent(Connexion.this, MainActivity.class);
-                    startActivity(intent);
+                    peripherique.connecter();
+                    if (!peripherique.isConnected) {
+                        Toast.makeText(getApplicationContext(), "Something went wrong, connexion impossible, please try again.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        Peripherique.peripherique = peripherique;
+                        Intent intent = new Intent(Connexion.this, MainActivity.class);
+                        startActivity(intent);
+                    }
+                    // while(!peripherique.isConnected);
                 }
-               // while(!peripherique.isConnected);
+                Toast.makeText(getApplicationContext(), "Please choose a peripherique.", Toast.LENGTH_SHORT).show();
             }
         });
 
