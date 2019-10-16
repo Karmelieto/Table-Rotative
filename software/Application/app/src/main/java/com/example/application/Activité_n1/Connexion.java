@@ -61,7 +61,9 @@ public class Connexion extends AppCompatActivity {
         btnConnecter.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (!peripheriqueText.getText().toString().equals("Appareil à connecter")) {
+                if (peripheriqueText.getText().toString().equals("Appareil à connecter")) {
+                    Toast.makeText(getApplicationContext(), "Please choose a peripherique.", Toast.LENGTH_SHORT).show();
+                } else {
                     System.out.println("click sur connecter");
                     String str = "Trying to connect to " + peripheriqueText.getText() + "...";
                     Toast.makeText(getApplicationContext(), str, Toast.LENGTH_SHORT).show();
@@ -76,7 +78,6 @@ public class Connexion extends AppCompatActivity {
                     }
                     // while(!peripherique.isConnected);
                 }
-                Toast.makeText(getApplicationContext(), "Please choose a peripherique.", Toast.LENGTH_SHORT).show();
             }
         });
 

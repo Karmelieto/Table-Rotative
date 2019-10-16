@@ -1,9 +1,7 @@
 package com.example.application.Activité_n1.Bluetooth;
 
-import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
-import android.content.Context;
 import android.os.Handler;
 import android.os.Looper;
 import android.view.View;
@@ -101,15 +99,10 @@ public class Peripherique {
                 deconnecter();
                 System.out.println("connexion en cours");
                 try {
-                    try {
-                        System.out.println("INSIDE FIRST TRY");
-                        socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
-                        tReception = new TReception(handler);
-                    } catch (Exception e) {
-                        System.out.println("INSIDE FIRST CATCH");
-                        e.printStackTrace();
-                        return;
-                    }
+                    System.out.println("INSIDE FIRST TRY");
+                    socket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"));
+                    tReception = new TReception(handler);
+
                     socket.connect();
                     sendStream = socket.getOutputStream();
                     receiveStream = socket.getInputStream();
@@ -117,12 +110,15 @@ public class Peripherique {
 
                     isConnected = true;
 
-                    System.out.println("connexion établie");
-
-                } catch (IOException e) {
-                    System.out.println("INSIDE SECOND CATCH");
-                    System.out.println("<Socket> error connect");
+                    System.out.println("Connexion établie");
+                } catch (Exception e) {
                     e.printStackTrace();
+                    try {
+                        socket.close();
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }
+                    return;
                 }
             }
         }.start();
