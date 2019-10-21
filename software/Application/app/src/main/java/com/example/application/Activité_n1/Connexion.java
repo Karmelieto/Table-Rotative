@@ -121,49 +121,52 @@ public class Connexion extends AppCompatActivity {
                 Toast.makeText(getApplicationContext(), "Bluetooth non activé !", Toast.LENGTH_SHORT).show();
                 Intent activeBlueTooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
                 startActivityForResult(activeBlueTooth, REQUEST_CODE_ENABLE_BLUETOOTH);
-                //bluetoothAdapter.enable();
             } else {
                 Toast.makeText(getApplicationContext(), "Bluetooth activé", Toast.LENGTH_SHORT).show();
-
-                // Recherche des périphériques connus
-                devices = adaptateurBluetooth.getBondedDevices();
-                for (BluetoothDevice blueDevice : devices) {
-                    //Toast.makeText(getApplicationContext(), "Périphérique = " + blueDevice.getName(), Toast.LENGTH_SHORT).show();
-                    peripheriques.add(new Peripherique(blueDevice, handler));
-                    noms.add(blueDevice.getName());
-                }
-
-                if (peripheriques.size() == 0)
-                    peripheriques.add(new Peripherique(null, handler));
-                if (noms.size() == 0)
-                    noms.add("Aucun");
-
-
-                System.out.println(peripheriques.size());
-
-                listePeripheriques = (RecyclerView) findViewById(R.id.bluetoothList);
-                RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
-                listePeripheriques.setLayoutManager(layoutManager);
-                listePeripheriques.setItemAnimator(new DefaultItemAnimator());
-                final PeripheriqueAdapter peripheriqueAdapter = new PeripheriqueAdapter(this, peripheriques);
-                listePeripheriques.setAdapter(peripheriqueAdapter);
-
-                listePeripheriques.addOnItemTouchListener(new RecyclerTouch(this, listePeripheriques, new RecyclerTouch.ClickListener() {
-                    @Override
-                    public void onClick(View view, int position) {
-                        peripherique = peripheriques.get(position);
-                        peripheriqueText.setText(peripherique.getNom());
-                    }
-
-                    @Override
-                    public void onLongClick(View view, int position) {
-                        peripherique = peripheriques.get(position);
-                        peripheriqueText.setText(peripherique.getNom());
-                    }
-                }));
+                showPeripherals();
             }
         }
-
     }
-}
+
+    public void showPeripherals() {
+
+            // Recherche des périphériques connus
+            devices = adaptateurBluetooth.getBondedDevices();
+            for (BluetoothDevice blueDevice : devices) {
+                //Toast.makeText(getApplicationContext(), "Périphérique = " + blueDevice.getName(), Toast.LENGTH_SHORT).show();
+                peripheriques.add(new Peripherique(blueDevice, handler));
+                noms.add(blueDevice.getName());
+            }
+
+            if (peripheriques.size() == 0)
+                peripheriques.add(new Peripherique(null, handler));
+            if (noms.size() == 0)
+                noms.add("Aucun");
+
+
+            System.out.println(peripheriques.size());
+
+            listePeripheriques = (RecyclerView) findViewById(R.id.bluetoothList);
+            RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+            listePeripheriques.setLayoutManager(layoutManager);
+            listePeripheriques.setItemAnimator(new DefaultItemAnimator());
+            final PeripheriqueAdapter peripheriqueAdapter = new PeripheriqueAdapter(this, peripheriques);
+            listePeripheriques.setAdapter(peripheriqueAdapter);
+
+            listePeripheriques.addOnItemTouchListener(new RecyclerTouch(this, listePeripheriques, new RecyclerTouch.ClickListener() {
+                @Override
+                public void onClick(View view, int position) {
+                    peripherique = peripheriques.get(position);
+                    peripheriqueText.setText(peripherique.getNom());
+                }
+
+                @Override
+                public void onLongClick(View view, int position) {
+                    peripherique = peripheriques.get(position);
+                    peripheriqueText.setText(peripherique.getNom());
+                }
+            }));
+        }
+    }
+
 
