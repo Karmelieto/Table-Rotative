@@ -12,6 +12,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,12 +25,11 @@ import com.example.application.R;
 import java.util.ArrayList;
 import java.util.Set;
 
-/*
-Activité 1 ayant pour but de choisir le bon périphérique parmi une liste de périphériques connus appareillé en bluetooth
-Lorsque l'on click sur le bon périphérique, il s'affiche au dessus du bouton 'connecter' et on peut appuyer ainsi sur ce bouton pour
-aller à l'activité suivante
-
- */
+/**
+ * Première activité lancé par l'application ayant pour but de choisir le bon périphérique parmi une liste de périphériques connus appareillé en bluetooth
+ * Lorsque l'on click sur le bon périphérique, il s'affiche au dessus du bouton 'connecter' et on peut appuyer ainsi sur ce bouton pour
+ * aller à l'activité suivante.
+ **/
 
 public class Connexion extends AppCompatActivity {
     private final static int REQUEST_CODE_ENABLE_BLUETOOTH = 0;
@@ -41,6 +41,8 @@ public class Connexion extends AppCompatActivity {
     private Peripherique peripherique;
     private Handler handler;
 
+
+    private ImageButton btnRefresh;
     private Button btnConnecter;
     private RecyclerView listePeripheriques;
 
@@ -55,8 +57,23 @@ public class Connexion extends AppCompatActivity {
 
         peripheriqueText = findViewById(R.id.textPeripheriqueName);
         btnConnecter = findViewById(R.id.btnConnecter);
+        btnRefresh = findViewById(R.id.btnRefresh);
 
-        connectBluetooh();
+        connectBluetooth();
+
+        adaptateurBluetooth = BluetoothAdapter.getDefaultAdapter();
+
+        btnRefresh.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                peripheriques.clear();
+                if (adaptateurBluetooth.isEnabled()) {
+                    showPeripherals();
+                } else {
+                    connectBluetooth();
+                }
+            }
+        });
 
         btnConnecter.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -76,7 +93,6 @@ public class Connexion extends AppCompatActivity {
                         Intent intent = new Intent(Connexion.this, MainActivity.class);
                         startActivity(intent);
                     }
-                    // while(!peripherique.isConnected);
                 }
             }
         });
@@ -111,7 +127,11 @@ public class Connexion extends AppCompatActivity {
         }
     }
 
-    protected void connectBluetooh() {
+    /**
+     * Cette fonction vérifie si le bluetooh est activé. Si il ne l'est pas une demande d'activation est faite.
+     * Par la suite on déclenche l'affichage des périphériques quand le bluetooh est activé.
+     */
+    protected void connectBluetooth() {
 
         adaptateurBluetooth = BluetoothAdapter.getDefaultAdapter();
         if (adaptateurBluetooth == null) {
@@ -128,45 +148,50 @@ public class Connexion extends AppCompatActivity {
         }
     }
 
+    /**
+     * Cette fonction permet d'afficher les périphériques bluetooth connus et appareillés sur la page.
+     * Mais aussi de choisir sur lequel se connecter.
+     */
+
     public void showPeripherals() {
 
-            // Recherche des périphériques connus
-            devices = adaptateurBluetooth.getBondedDevices();
-            for (BluetoothDevice blueDevice : devices) {
-                //Toast.makeText(getApplicationContext(), "Périphérique = " + blueDevice.getName(), Toast.LENGTH_SHORT).show();
-                peripheriques.add(new Peripherique(blueDevice, handler));
-                noms.add(blueDevice.getName());
+        // Recherche des périphériques connus
+        devices = adaptateurBluetooth.getBondedDevices();
+        for (BluetoothDevice blueDevice : devices) {
+            //Toast.makeText(getApplicationContext(), "Périphérique = " + blueDevice.getName(), Toast.LENGTH_SHORT).show();
+            peripheriques.add(new Peripherique(blueDevice, handler));
+            noms.add(blueDevice.getName());
+        }
+
+        if (peripheriques.size() == 0)
+            peripheriques.add(new Peripherique(null, handler));
+        if (noms.size() == 0)
+            noms.add("Aucun");
+
+
+        System.out.println(peripheriques.size());
+
+        listePeripheriques = (RecyclerView) findViewById(R.id.bluetoothList);
+        RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
+        listePeripheriques.setLayoutManager(layoutManager);
+        listePeripheriques.setItemAnimator(new DefaultItemAnimator());
+        final PeripheriqueAdapter peripheriqueAdapter = new PeripheriqueAdapter(this, peripheriques);
+        listePeripheriques.setAdapter(peripheriqueAdapter);
+
+        listePeripheriques.addOnItemTouchListener(new RecyclerTouch(this, listePeripheriques, new RecyclerTouch.ClickListener() {
+            @Override
+            public void onClick(View view, int position) {
+                peripherique = peripheriques.get(position);
+                peripheriqueText.setText(peripherique.getNom());
             }
 
-            if (peripheriques.size() == 0)
-                peripheriques.add(new Peripherique(null, handler));
-            if (noms.size() == 0)
-                noms.add("Aucun");
-
-
-            System.out.println(peripheriques.size());
-
-            listePeripheriques = (RecyclerView) findViewById(R.id.bluetoothList);
-            RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
-            listePeripheriques.setLayoutManager(layoutManager);
-            listePeripheriques.setItemAnimator(new DefaultItemAnimator());
-            final PeripheriqueAdapter peripheriqueAdapter = new PeripheriqueAdapter(this, peripheriques);
-            listePeripheriques.setAdapter(peripheriqueAdapter);
-
-            listePeripheriques.addOnItemTouchListener(new RecyclerTouch(this, listePeripheriques, new RecyclerTouch.ClickListener() {
-                @Override
-                public void onClick(View view, int position) {
-                    peripherique = peripheriques.get(position);
-                    peripheriqueText.setText(peripherique.getNom());
-                }
-
-                @Override
-                public void onLongClick(View view, int position) {
-                    peripherique = peripheriques.get(position);
-                    peripheriqueText.setText(peripherique.getNom());
-                }
-            }));
-        }
+            @Override
+            public void onLongClick(View view, int position) {
+                peripherique = peripheriques.get(position);
+                peripheriqueText.setText(peripherique.getNom());
+            }
+        }));
     }
+}
 
 
